@@ -6,18 +6,48 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 public class MainActivity extends AppCompatActivity {
+    private TextView ipTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ipTextView = (TextView)findViewById(R.id.ip_text);
 
+        String ip = getIp();
+        if(ip != null){
+            ipTextView.setText(ip);
+        }else{
+            ipTextView.setText("null");
+        }
         //获取capture权限
         requestCapturePermission();
     }
 
+    private String getIp(){
+        String ipString = null;
+        int type = NetWorkUtil.getNetworkType(this);
+
+        switch (type){
+            case NetWorkUtil.NETWORK_ERROR:
+                Toast.makeText(this,"network error", Toast.LENGTH_LONG).show();
+                break;
+            case NetWorkUtil.WIFI_CONNECT:
+                ipString = NetWorkUtil.getlocalip(this);
+                break;
+            case NetWorkUtil.GPRS_CONNECT:
+                ipString = NetWorkUtil.getLocalIpAddress();
+                break;
+        }
+
+        return ipString;
+    }
     public void requestCapturePermission() {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {

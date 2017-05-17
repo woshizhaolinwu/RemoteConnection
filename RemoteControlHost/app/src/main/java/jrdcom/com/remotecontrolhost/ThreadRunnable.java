@@ -12,6 +12,7 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v4.os.AsyncTaskCompat;
 import android.util.DisplayMetrics;
@@ -49,13 +50,6 @@ public class ThreadRunnable implements Runnable {
     @Override
     public void run() {
         try{
-            //定义handler，方便发送消息
-            threadHandler =  new Handler(){
-                @Override
-                public void handleMessage(Message msg) {
-                    //消息处理
-                }
-            };
             //循环监听
             threadServerSocket = new ServerSocket(30000);
             while (true){
@@ -84,10 +78,11 @@ public class ThreadRunnable implements Runnable {
             @Override
             public void run() {
                 //这里截屏兵发送
+
                 try{
                     final int VERSION = 2;
                     final BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
-
+                    Looper.prepare();
                     writerHandler = new Handler() {
                             @Override
                             public void handleMessage(Message msg) {
@@ -111,7 +106,8 @@ public class ThreadRunnable implements Runnable {
                                 }
                             }
                         };
-                        while(true)
+                    Looper.loop();
+                    while(true)
                         {
                             if(false == isDoing){
                                 isDoing = true;
@@ -121,7 +117,6 @@ public class ThreadRunnable implements Runnable {
                 }catch (IOException e){
                     e.printStackTrace();
                 }
-
 
             }
         });
