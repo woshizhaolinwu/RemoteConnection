@@ -38,7 +38,7 @@ public class ThreadRunnable implements Runnable {
     private ImageReader mImageReader;
     private Context mContext;
     private VirtualDisplay mVirtualDisplay;
-
+    private boolean isDoing = false;
     private Handler writerHandler;
 
     public ThreadRunnable(Context context, Intent data){
@@ -87,26 +87,37 @@ public class ThreadRunnable implements Runnable {
                 try{
                     final int VERSION = 2;
                     final BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
-                    while (true) {
-                        writerHandler = new Handler(){
+
+                    writerHandler = new Handler() {
                             @Override
                             public void handleMessage(Message msg) {
-                                switch (msg.what){
+                                switch (msg.what) {
                                     case Common.SEND_BITMAP:
-                                        Bitmap bitmap = screenshot();//获取屏幕截图
-                                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteArrayOutputStream);
+                                        isDoing = false;
+                                        try {
+                                            Bitmap bitmap = mBitmap;//screenshot();//获取屏幕截图
+                                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteArrayOutputStream);
 
-                                        outputStream.write(2);
-                                        Utils.writeInt(outputStream, byteArrayOutputStream.size());
-                                        outputStream.write(byteArrayOutputStream.toByteArray());
-                                        outputStream.flush();
+                                            outputStream.write(2);
+                                            Utils.writeInt(outputStream, byteArrayOutputStream.size());
+                                            outputStream.write(byteArrayOutputStream.toByteArray());
+                                            outputStream.flush();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+
                                         break;
                                 }
                             }
                         };
-
-                    }
+                        while(true)
+                        {
+                            if(false == isDoing){
+                                isDoing = true;
+                                screenshot();
+                            }
+                        }
                 }catch (IOException e){
                     e.printStackTrace();
                 }
@@ -117,7 +128,7 @@ public class ThreadRunnable implements Runnable {
     }
 
     //获取截图
-    private Bitmap screenshot(){
+    private void screenshot(){
         startScreenShot();
     }
 
