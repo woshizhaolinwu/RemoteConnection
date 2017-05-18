@@ -3,9 +3,12 @@ package jrdcom.com.remotecontrolclient;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Message;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,7 +22,11 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
     private ImageView mControlImage;
     private Button mButtonConnect;
     private Button mButtonDisConnect;
+    private FloatingActionButton mFloatingButton;
     MainContract.MainPresent present;
+
+    //控制float的点击
+    private boolean floatSelect = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,11 +40,11 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
     /*构建UI*/
     private void initView(){
         mControlImage = (ImageView)findViewById(R.id.control_imageview);
-        mButtonConnect = (Button)findViewById(R.id.btn_connect);
-        mButtonDisConnect = (Button)findViewById(R.id.btn_disconnect);
-        mButtonConnect.setOnClickListener(onClickListener);
-        mButtonDisConnect.setOnClickListener(onClickListener);
-        mButtonDisConnect.setEnabled(false);
+
+        mFloatingButton = (FloatingActionButton)findViewById(R.id.float_button);
+        mFloatingButton.setOnClickListener(onClickListener);
+
+
     }
 
     private void initPresent(){
@@ -48,11 +55,10 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
         @Override
         public void onClick(View v) {
             switch (v.getId()){
-                case R.id.btn_connect:
-                    connectHost();
-                    break;
-                case R.id.btn_disconnect:
-                    disconnectHost();
+
+                case R.id.float_button:
+                    //Do
+                    floatButtonClick();
                     break;
             }
         }
@@ -65,13 +71,14 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
     }
     /*断开Host*/
     private void disconnectHost(){
-
+        present.disconnectHost();
     }
 
     private void showInputDialog(){
         final EditText editText = new EditText(this);
         editText.setBackground(null);
         editText.setPadding(60, 40, 0, 0);
+        editText.setText("172.25.2.126");
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.Base_AlertDialog);
         builder.setTitle("Please input connect ip");
         builder.setView(editText);
@@ -87,7 +94,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
             }
         });
         builder.setNegativeButton("取消", null);
-        builder.create();
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     /*确认是否IpString*/
@@ -134,12 +142,44 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
     @Override
     public void connectSuccess() {
         Toast.makeText(this, "Connect Success", Toast.LENGTH_SHORT).show();
-        mButtonConnect.setEnabled(false);
-        mButtonDisConnect.setEnabled(true);
+        //mButtonConnect.setEnabled(false);
+        //mButtonDisConnect.setEnabled(true);
+        Bitmap bi = BitmapFactory.decodeResource(getResources(), R.drawable.ic_disconnect);
+
+        mFloatingButton.setImageBitmap(bi);
+        mFloatingButton.setBackgroundColor(getResources().getColor(R.color.float_button_bk));
+        floatSelect = true;
     }
 
     @Override
     public void showBitmap(Bitmap bitmap) {
+        //计算下显示用了多少时间
+        long s1 = System.currentTimeMillis();
         mControlImage.setImageBitmap(bitmap);
+        long s2 = System.currentTimeMillis();
+        Log.d(Common.TAG, "Used Time: "+(s2 - s1));
+    }
+
+    @Override
+    public void disconnect() {
+        Toast.makeText(this, "Disconnect", Toast.LENGTH_SHORT).show();
+        Bitmap bi = BitmapFactory.decodeResource(getResources(), R.drawable.ic_connect);
+
+        mFloatingButton.setImageBitmap(bi);
+        mFloatingButton.setBackgroundColor(getResources().getColor(R.color.float_button_normal_bk));
+        floatSelect = false;
+        //mButtonConnect.setEnabled(true);
+        //mButtonDisConnect.setEnabled(false);
+    }
+
+    //Float Button功能
+    private void floatButtonClick(){
+        if(floatSelect == false){
+            connectHost();
+            //floatSelect = true;
+        }else{
+            disconnectHost();
+            //floatSelect = false;
+        }
     }
 }

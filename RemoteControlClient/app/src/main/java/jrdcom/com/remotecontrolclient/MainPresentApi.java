@@ -24,6 +24,9 @@ public class MainPresentApi implements MainContract.MainPresent {
     private MainContract.MainView view;
     private InputStream mainIn = null;
     private OutputStream mainOut =null;
+
+
+
     //创建一个 Handler， 用于监听子线程发送过来的消息
     public Handler mainHandler = new Handler(){
         @Override
@@ -45,6 +48,11 @@ public class MainPresentApi implements MainContract.MainPresent {
                     readSocket(mainIn);
                     break;
 
+                //断开连接成功
+                case Common.MSG_DISCONNECT_SUCCESS:
+                    view.disconnect();
+                    break;
+
                 //获取到bitmap,显示
                 case Common.MSG_SHOW_BITMAP:
                     Bundle showBitmapBundle = msg.getData();
@@ -60,27 +68,29 @@ public class MainPresentApi implements MainContract.MainPresent {
 
     public MainPresentApi(MainContract.MainView mainView){
         view = mainView;
+        threadRunnable = new ThreadRunnable(this);
+        //开启一个线程专门进行操作
+        new Thread(threadRunnable).start();
     }
 
     /*实现MainPresend的接口*/
     @Override
     public void connectHost(String ipString) {
-        threadRunnable = new ThreadRunnable(this);
-        //开启一个线程专门进行操作
-        new Thread(threadRunnable).start();
-
         //向子线程发送消息进行连接
         Message msg = new Message();
         msg.what = Common.MSG_CONNECT;
         Bundle bundle = new Bundle();
         bundle.putString("ip", ipString);
         msg.setData(bundle);
-        ThreadRunnable.threadHandler.sendMessage(msg);
+        threadRunnable.threadHandler.sendMessage(msg);
     }
+
+
+    /*----------------*/
 
     public void disconnectHost(){
         //向子线程发送消息断开连接
-        ThreadRunnable.threadHandler.sendEmptyMessage(Common.MSG_DISCONNECT);
+        threadRunnable.threadHandler.sendEmptyMessage(Common.MSG_DISCONNECT);
     }
 
     public void getInAndOut(InputStream in, OutputStream out){
@@ -132,7 +142,7 @@ public class MainPresentApi implements MainContract.MainPresent {
                 }
 
             }
-        });
+        }).start();
     }
 
     private void showBitmap(byte[] bytes){

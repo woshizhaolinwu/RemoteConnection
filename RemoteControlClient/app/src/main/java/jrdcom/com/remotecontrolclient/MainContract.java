@@ -10,6 +10,7 @@ public class MainContract {
     public interface MainView{
         void showErrorInfo(String erroinfo);
         void connectSuccess();
+        void disconnect();
         void showBitmap(Bitmap bitmap);
     }
     public interface MainPresent{

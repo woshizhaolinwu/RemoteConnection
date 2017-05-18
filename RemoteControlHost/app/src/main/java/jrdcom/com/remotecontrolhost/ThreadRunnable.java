@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -16,9 +18,11 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v4.os.AsyncTaskCompat;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -41,10 +45,13 @@ public class ThreadRunnable implements Runnable {
     private VirtualDisplay mVirtualDisplay;
     private boolean isDoing = false;
     private Handler writerHandler;
+    private int bitmapWidth = 0;
+    private int bitmapHeight = 0;
 
     public ThreadRunnable(Context context, Intent data){
         mContext = context;
         setupMediaProjection(data);
+        createImageReader();
     }
 
     @Override
@@ -54,8 +61,12 @@ public class ThreadRunnable implements Runnable {
             threadServerSocket = new ServerSocket(30000);
             while (true){
                 //进行监听是否有连接
-                threadSocket = threadServerSocket.accept();
-                acceptSocket(threadSocket);
+                try{
+                    //threadSocket = threadServerSocket.accept();
+                    acceptSocket(threadServerSocket.accept());
+                }catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }catch (IOException e){
             e.printStackTrace();
@@ -90,9 +101,18 @@ public class ThreadRunnable implements Runnable {
                                     case Common.SEND_BITMAP:
                                         isDoing = false;
                                         try {
-                                            Bitmap bitmap = mBitmap;//screenshot();//获取屏幕截图
+                                            Bitmap bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565);//= mBitmap;//获取屏幕截图  图片得压缩啊，不然要OOM
+                                            //缩放法
+                                            //Matrix matrix = new Matrix();
+                                            //matrix.setScale(0.5f, 0.5f);
+                                            //bitmap = Bitmap.createBitmap(mBitmap, 0, 0, bitmapWidth, bitmapHeight, matrix, true);
                                             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteArrayOutputStream);
+                                            //宽度和高度压缩
+                                            Bitmap bitmap1 = Bitmap.createScaledBitmap(mBitmap, 320, 480,true);
+                                            //质量压缩
+                                            bitmap1.compress(Bitmap.CompressFormat.WEBP, 10, byteArrayOutputStream); //质量压缩
+                                            int size1 = byteArrayOutputStream.size();
+
 
                                             outputStream.write(2);
                                             Utils.writeInt(outputStream, byteArrayOutputStream.size());
@@ -102,24 +122,20 @@ public class ThreadRunnable implements Runnable {
                                             e.printStackTrace();
                                         }
 
+                                        screenshot();
                                         break;
                                 }
                             }
                         };
+                    screenshot();
                     Looper.loop();
-                    while(true)
-                        {
-                            if(false == isDoing){
-                                isDoing = true;
-                                screenshot();
-                            }
-                        }
+
                 }catch (IOException e){
                     e.printStackTrace();
                 }
 
             }
-        });
+        }).start();
     }
 
     //获取截图
@@ -142,7 +158,7 @@ public class ThreadRunnable implements Runnable {
 
         int screenWidth = displayMetrics.widthPixels;
         int screenHeight = displayMetrics.heightPixels;
-        mImageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 1);
+        mImageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 3);
     }
 
     private void startScreenShot() {
@@ -150,6 +166,7 @@ public class ThreadRunnable implements Runnable {
         handler1.postDelayed(new Runnable() {
             public void run() {
                 //start virtual
+                Log.d(Common.TAG, "Go to startVirtual");
                 startVirtual();
             }
         }, 5);
@@ -157,10 +174,11 @@ public class ThreadRunnable implements Runnable {
         handler1.postDelayed(new Runnable() {
             public void run() {
                 //capture the screen
+                Log.d(Common.TAG, "Go to startCapture");
                 startCapture();
 
             }
-        }, 30);
+        }, 5);
     }
     private void virtualDisplay() {
         DisplayMetrics displayMetrics = Utils.getScreenDes(mContext);
@@ -193,6 +211,10 @@ public class ThreadRunnable implements Runnable {
             mBitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
             mBitmap.copyPixelsFromBuffer(buffer);
             mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, width, height);
+            bitmapWidth = width;
+            bitmapHeight = height;
+            //
+            writerHandler.sendEmptyMessage(Common.SEND_BITMAP);
         }
     }
 

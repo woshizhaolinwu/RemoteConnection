@@ -16,7 +16,7 @@ import java.net.Socket;
  */
 
 public class ThreadRunnable implements Runnable {
-    public static Handler threadHandler;
+    public Handler threadHandler;
     private Socket threadSocket;
     private MainPresentApi threadPresent;
     private OutputStream out;
@@ -81,7 +81,7 @@ public class ThreadRunnable implements Runnable {
         }catch (IOException e){
             e.printStackTrace();
         }
-
+        disconnect();
     }
 
     //封装错误消息到主线程
@@ -99,6 +99,11 @@ public class ThreadRunnable implements Runnable {
         threadPresent.mainHandler.sendEmptyMessage(Common.MSG_CONNECT_SUCCESS);
     }
 
+
+    private void disconnect(){
+        Message msg = new Message();
+        threadPresent.mainHandler.sendEmptyMessage(Common.MSG_DISCONNECT_SUCCESS);
+    }
 
     /*开启一个输入线程开接收输入时传入的信息*/
 }
