@@ -108,7 +108,7 @@ public class ThreadRunnable implements Runnable {
                                             //bitmap = Bitmap.createBitmap(mBitmap, 0, 0, bitmapWidth, bitmapHeight, matrix, true);
                                             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                                             //宽度和高度压缩
-                                            Bitmap bitmap1 = Bitmap.createScaledBitmap(mBitmap, 320, 480,true);
+                                            Bitmap bitmap1 = Bitmap.createScaledBitmap(mBitmap, 640, 960,true);
                                             //质量压缩
                                             bitmap1.compress(Bitmap.CompressFormat.WEBP, 10, byteArrayOutputStream); //质量压缩
                                             int size1 = byteArrayOutputStream.size();

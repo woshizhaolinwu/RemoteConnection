@@ -4,8 +4,10 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
+import android.support.graphics.drawable.VectorDrawableCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -144,10 +146,10 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
         Toast.makeText(this, "Connect Success", Toast.LENGTH_SHORT).show();
         //mButtonConnect.setEnabled(false);
         //mButtonDisConnect.setEnabled(true);
-        Bitmap bi = BitmapFactory.decodeResource(getResources(), R.drawable.ic_disconnect);
+        //Bitmap bi = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+        Drawable drawable = VectorDrawableCompat.create(getResources(), R.drawable.ic_disconnect, getTheme());
 
-        mFloatingButton.setImageBitmap(bi);
-        mFloatingButton.setBackgroundColor(getResources().getColor(R.color.float_button_bk));
+        mFloatingButton.setImageDrawable(drawable);
         floatSelect = true;
     }
 
@@ -163,10 +165,9 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
     @Override
     public void disconnect() {
         Toast.makeText(this, "Disconnect", Toast.LENGTH_SHORT).show();
-        Bitmap bi = BitmapFactory.decodeResource(getResources(), R.drawable.ic_connect);
+        Drawable drawable = VectorDrawableCompat.create(getResources(), R.drawable.ic_connect, getTheme());
 
-        mFloatingButton.setImageBitmap(bi);
-        mFloatingButton.setBackgroundColor(getResources().getColor(R.color.float_button_normal_bk));
+        mFloatingButton.setImageDrawable(drawable);
         floatSelect = false;
         //mButtonConnect.setEnabled(true);
         //mButtonDisConnect.setEnabled(false);
