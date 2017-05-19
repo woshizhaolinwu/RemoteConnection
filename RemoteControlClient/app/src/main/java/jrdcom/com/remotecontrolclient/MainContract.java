@@ -13,8 +13,11 @@ public class MainContract {
         void disconnect();
         void showBitmap(Bitmap bitmap);
     }
-    public interface MainPresent{
+    public interface MainPresent {
         void connectHost(String ipString);
+
         void disconnectHost();
+
+        void sendKeyEvent(String sendKey);
     }
 }

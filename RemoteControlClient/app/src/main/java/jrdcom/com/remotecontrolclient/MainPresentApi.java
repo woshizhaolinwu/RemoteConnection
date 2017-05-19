@@ -6,6 +6,7 @@ import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.MotionEvent;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -157,7 +158,23 @@ public class MainPresentApi implements MainContract.MainPresent {
 
     private void writeSocket(OutputStream out){
         //这边就根据操作来发送事件
+        if(out ==null){
+            return;
+        }
+        mainOut = out;
     }
+
+    public void sendKeyEvent(String sendKey){
+        //注意，这里是主线程 这边起一个新的线程，这里发送消息到子线程来处理
+        Message msg = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putString("sendkey", sendKey);
+        msg.setData(bundle);
+        msg.what = Common.MSG_SEND_KEY;
+        threadRunnable.threadHandler.sendMessage(msg);
+    }
+
+
 
 
 }

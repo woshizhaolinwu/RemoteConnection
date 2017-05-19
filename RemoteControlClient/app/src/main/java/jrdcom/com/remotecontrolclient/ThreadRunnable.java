@@ -5,9 +5,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -21,6 +23,7 @@ public class ThreadRunnable implements Runnable {
     private MainPresentApi threadPresent;
     private OutputStream out;
     private InputStream in;
+    private BufferedWriter write;
     /*看下构造函数是否能够传递present过来。。。*/
     public ThreadRunnable(MainPresentApi present){
         threadPresent = present;
@@ -40,6 +43,14 @@ public class ThreadRunnable implements Runnable {
                     case Common.MSG_DISCONNECT:
                         disconnectSocket();
                         break;
+
+                    case Common.MSG_SEND_KEY:
+                        //将String发送给Host
+                        //获取String
+                        Bundle bundle = msg.getData();
+                        String keyString = bundle.getString("sendkey");
+                        sendKey(keyString);
+                        break;
                 }
             }
         };
@@ -57,6 +68,7 @@ public class ThreadRunnable implements Runnable {
             //进行连接
             threadSocket.connect(new InetSocketAddress(ip, 30000), 1000);
             out = threadSocket.getOutputStream();
+            write = new BufferedWriter(new OutputStreamWriter(out));
             in = threadSocket.getInputStream(); //这边应该需要重新开启线程来监听输入流
             connectSuccess();   //没有异常，需要通知上层View连接成功
 
@@ -103,6 +115,21 @@ public class ThreadRunnable implements Runnable {
     private void disconnect(){
         Message msg = new Message();
         threadPresent.mainHandler.sendEmptyMessage(Common.MSG_DISCONNECT_SUCCESS);
+    }
+
+    private  void sendKey(String keyString){
+        if(write == null){
+            return;
+        }
+
+        try{
+            write.write(keyString);
+            write.newLine();
+            write.flush();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+
     }
 
     /*开启一个输入线程开接收输入时传入的信息*/

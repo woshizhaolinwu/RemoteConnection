@@ -18,11 +18,13 @@ public class Utils {
         outputStream.write(v >> 8);
         outputStream.write(v);
     }
+
     public static DisplayMetrics getScreenDes(Context context){
         DisplayMetrics metrics = new DisplayMetrics();
         WindowManager mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         mWindowManager.getDefaultDisplay().getMetrics(metrics);
         return metrics;
     }
+
 
 }
