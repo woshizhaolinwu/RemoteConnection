@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
 
     private String getPointString(MotionEvent event){
         int x = (int) event.getX()*bitmapWidth /imageWidth;
-        int y = (int) event.getY()*bitmapheight /imageHeight;
+        int y = (int) (event.getY() - ScreenUtil.getStatusBarHeight(this))*bitmapheight /imageHeight;
         String string = x+"#"+y;
         return  string;
     };
@@ -232,10 +232,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.Main
             bitmapheight = bitmap.getHeight();
             Log.d(Common.TAG, "bitmapWidth = "+bitmapWidth+"bitmapHeight = "+bitmapheight);
         }
-        long s1 = System.currentTimeMillis();
         mControlImage.setImageBitmap(bitmap);
-        long s2 = System.currentTimeMillis();
-        Log.d(Common.TAG, "Used Time: "+(s2 - s1));
     }
 
     @Override

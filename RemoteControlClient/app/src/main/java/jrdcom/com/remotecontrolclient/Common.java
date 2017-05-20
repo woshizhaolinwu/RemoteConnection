@@ -14,4 +14,9 @@ public class Common {
     public final static int MSG_SEND_KEY = 0x17;
 
     public final static String TAG = "RemoteControl";
+
+    //默认的宽高
+    public static final int WIDTH = 160;
+    public static final int HEIGHT = 240;
+    public static final int CONVERT = 4;
 }

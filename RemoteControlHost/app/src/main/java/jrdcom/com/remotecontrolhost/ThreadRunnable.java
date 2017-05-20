@@ -63,6 +63,9 @@ public class ThreadRunnable implements Runnable {
     private static Method injectInputEventMethod;
     private static long downTime;
 
+    long startTime= 0;
+    long endTime = 0;
+
     public ThreadRunnable(Context context, Intent data){
         mContext = context;
         setupMediaProjection(data);
@@ -161,22 +164,31 @@ public class ThreadRunnable implements Runnable {
                                     case Common.SEND_BITMAP:
                                         isDoing = false;
                                         try {
+                                            startTime = System.currentTimeMillis();
                                             float densti = Utils.getScreenDes(mContext).density;
                                             Bitmap bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565);//= mBitmap;//获取屏幕截图  图片得压缩啊，不然要OOM
                                             //缩放法
                                             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-                                            //宽度和高度压缩
-                                            Bitmap bitmap1 = Bitmap.createScaledBitmap(mBitmap, (int)(160*densti), (int) (240*densti),true);
+                                            //宽度和高度压缩，按原图的1/4的大小进行压缩，这里还真不能乱压缩， 会变得很模糊。。。
+                                            Bitmap bitmap1;
+                                            if(bitmapWidth != 0 && bitmapHeight != 0){
+                                                bitmap1 = Bitmap.createScaledBitmap(mBitmap, (int)(bitmapWidth/Common.CONVERT), (int) (bitmapHeight/Common.CONVERT),true);
+                                            }else{
+                                                bitmap1 = Bitmap.createScaledBitmap(mBitmap, (int)(Common.WIDTH*densti), (int) (Common.HEIGHT*densti),true);
+                                            }
 
                                             //质量压缩 ,这个压缩需要花费太多时间了， 不做~
-                                            bitmap1.compress(Bitmap.CompressFormat.JPEG, 30, byteArrayOutputStream); //质量压缩
+                                            bitmap1.compress(Bitmap.CompressFormat.JPEG, 60, byteArrayOutputStream); //质量压缩
+
                                             int size = byteArrayOutputStream.size();
-                                            Log.d(Common.TAG, "bitmap size is"+byteArrayOutputStream.size());
+                                            //Log.d(Common.TAG, "bitmap size is"+byteArrayOutputStream.size());
                                             outputStream.write(2);
                                             Utils.writeInt(outputStream, byteArrayOutputStream.size());
                                             outputStream.write(byteArrayOutputStream.toByteArray());
                                             outputStream.flush();
+                                            endTime = System.currentTimeMillis();
+                                            //Log.d(Common.TAG, "time to send is "+(endTime - startTime));
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                             if(socket.isConnected()){
@@ -194,7 +206,7 @@ public class ThreadRunnable implements Runnable {
                                             long s4 = System.currentTimeMillis();
                                             //Log.d(Common.TAG, "current time is "+s4);
                                             try{
-                                                Thread.sleep(10);
+                                                Thread.sleep(100);
                                             }catch(InterruptedException e){
 
                                             }
@@ -218,8 +230,10 @@ public class ThreadRunnable implements Runnable {
 
     //获取截图
     private void screenshot(){
-
+        startTime = System.currentTimeMillis();
         startScreenShot();
+        endTime = System.currentTimeMillis();
+        //Log.d(Common.TAG, "Used time is "+(endTime - startTime));
     }
 
     private MediaProjectionManager getMediaProjectionManager() {
@@ -280,8 +294,7 @@ public class ThreadRunnable implements Runnable {
         if (image == null) {
             startScreenShot();
         } else {
-            //SaveTask mSaveTask = new SaveTask();
-            //AsyncTaskCompat.executeParallel(mSaveTask, image);
+
             int width = image.getWidth();
             int height = image.getHeight();
             final Image.Plane[] planes = image.getPlanes();
@@ -291,12 +304,23 @@ public class ThreadRunnable implements Runnable {
             //总的间距
             int rowStride = planes[0].getRowStride();
             int rowPadding = rowStride - pixelStride * width;
-            mBitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
+            //拍摄这边要处理一下，应该要去掉status_height和bottom bar的高度，只截图content的图像
+            //进行图像截图
+            int statusHeight = ScreenUtil.getStatusBarHeight(mContext);
+            int bottomBarHeight = ScreenUtil.getBottomStatusHeight(mContext);
+            //截取掉status 和bottombar
+            int screenHeight = height -statusHeight- bottomBarHeight;
+
+            //buffer截取,定义到staturbar后面
+            //这边我是很无语的， 为啥会分叉~~~
+            //buffer.position(width*statusHeight*pixelStride); //将buffer的position指向到statusbar后面一个
+
+            mBitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, screenHeight, Bitmap.Config.ARGB_8888);
             mBitmap.copyPixelsFromBuffer(buffer);
-            mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, width, height);
-            bitmapWidth = width;
-            bitmapHeight = height;
-            //
+            mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, width, screenHeight);
+            bitmapWidth = width;           //图像的宽高
+            bitmapHeight = screenHeight;
+
             writerHandler.sendEmptyMessage(Common.SEND_BITMAP);
         }
     }
@@ -315,7 +339,7 @@ public class ThreadRunnable implements Runnable {
         Point point;
         Log.d(Common.TAG, "lineString is"+ lineString.toString());
         //这边是测试代码，测试
-        /*if(lineString.startsWith(Common.DOWN)){ //Down
+        if(lineString.startsWith(Common.DOWN)){ //Down
             pointString = lineString.substring(Common.DOWN.length());
             point = parsePoint(pointString);
             hanlerDown(point);
@@ -327,7 +351,7 @@ public class ThreadRunnable implements Runnable {
             pointString = lineString.substring(Common.MOVE.length());
             point = parsePoint(pointString);
             hanlerMove(point);
-        }*/
+        }
     }
 
     private Point parsePoint(String pointString){
@@ -345,6 +369,7 @@ public class ThreadRunnable implements Runnable {
 
     /*模拟按键事件*/
     private static void handlerUp(Point point) {
+        Log.d(Common.TAG,"handlerUp, x = "+point.x+"y ="+point.y);
         if (point != null) {
             try {
                 touchUp(point.x, point.y);
